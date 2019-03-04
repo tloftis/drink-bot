@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<meta charset="utf-8"/>
+
+<html>
+    <div class="col-xs-12 pull-right drink-header">
+        <span class="fa-stack fa-2x pull-right text-primary"  onmousedown="home()" ontouchstart="home()" style="cursor: pointer"
+              title="Edit">
+          <i class="fa fa-square-o fa-stack-2x"></i>
+          <i class="fa fa-home fa-1x" style="margin: 15px;"></i>
+        </span>
+    </div>
+</html>
+
+<style>
+    @import "/public/libs/master.css";
+
+    .drink-header {
+        background: #b8b8b8;
+        width: 100%;
+    }
+</style>
+
+<script src="/public/libs/master.js"></script>
+
+<script type="module">
+    'use strict';
+
+    import EasyState from '/public/services/state.js';
+    import EasyNotify from '/public/services/notify.js';
+
+    let newNotify = new EasyNotify();
+    let newState = new EasyState();
+
+    document.home = () => {
+        newState.goToState('').catch(err => {
+            newNotify.error(err.message).show();
+        });
+    };
+</script>

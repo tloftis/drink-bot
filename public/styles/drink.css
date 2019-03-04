@@ -1,0 +1,48 @@
+#display {
+    margin-left: 30%;
+    margin-right: 30%;
+}
+
+#display .drink-image {
+    width: 25%;
+}
+
+#display .drink-title {
+    font-style: italic;
+}
+
+#display .drink-description {
+    margin: 10px 0 10px 0;
+}
+
+#display .drink-description textarea {
+    width: 75%;
+}
+
+#display .drink-container {
+    padding: 10px;
+    border-color: #31708f;
+    border-style: solid;
+    border-radius: 10px;
+    margin: 5px;
+}
+
+#display .drink-buttons {
+    cursor: pointer;
+    margin: 5px;
+}
+
+#display .drink-ingredients {
+
+}
+
+#display .drink-ingredient {
+
+}
+
+#display .drink-part {
+
+}
+
+#display .drink-table {
+}

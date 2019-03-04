@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+
+<html>
+    <body>
+		<div class="col-xs-12 text-center">
+			<div class="text-center row" style="" id="display"></div>
+		</div>
+    </body>
+</html>
+
+<style>
+	@import "/public/styles/drink.css";
+</style>
+
+<script type="module">
+    'use strict';
+
+    import EasyDom from '/public/services/dom.js';
+    import EasyFetch from '/public/services/fetch.js';
+    import EasyState from '/public/services/state.js';
+    import EasyNotify from '/public/services/notify.js';
+
+    let newNotify = new EasyNotify();
+    let newState = new EasyState();
+    let newFetch = new EasyFetch();
+    let newDom = new EasyDom();
+
+    let display = document.getElementById('display');
+    let socket = io(`${window.location.protocol}//${window.location.hostname}:${window.location.port}`);
+
+    async function displayConfig (elm, config){
+        let container = await newDom.createElm('div', 'drink-container');
+
+        container.innerHTML = `
+                <h2 class="drink-title">${config.displayName}</h2>
+                <img class="drink-image" src="/api/drink-image/${config.id}"/>
+                <div class="drink-description">${config.description || 'No Description!'}</div>
+                <label>Pin:</label> <input type="number" disabled="disabled" class="drink-description" value="${config.pin || -1}"></input>
+
+                <div class="">
+                    <span class="fa-stack fa-2x drink-buttons"  onmousedown="edit('${config.id}')" ontouchstart="edit('${config.id}')" style="cursor: pointer"
+                    	 title="Edit">
+                      <i class="fa fa-square-o fa-stack-2x"></i>
+                      <i class="fa fa-cog fa-1x"></i>
+                    </span>
+                </div>
+             `;
+
+        elm.appendChild(container);
+    }
+
+    document.edit = (id) => {
+        newState.goToState(`drinks/edit`, {
+            id
+        }).catch(err => {
+            newNotify.error(err.message).show();
+        });
+    };
+
+    socket.on('init', function (data) {
+        newNotify.info(data).show();
+    },);
+
+    newState.getParams().then(params => {
+        return newFetch.getJson(`drinks/${params.id}`)
+	}).then(config => {
+        return  displayConfig(display, config);
+    }).catch(err => {
+        newNotify.error(err.message).show();
+    });
+
+    window.addEventListener('load',function(){
+        let gamepad;
+
+        window.addEventListener('gamepadconnected', function() {
+            gamepad = navigator.getGamepads().pop();
+        });
+
+        window.addEventListener('gamepaddisconnected', function() {
+            gamepad = undefined;
+        });
+    });
+</script>

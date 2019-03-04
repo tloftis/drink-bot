@@ -1,0 +1,104 @@
+<html>
+    <body>
+		<div class="col-xs-12 text-center">
+			<span class="fa-stack fa-2x pull-left text-info drink-buttons"  onmousedown="add()" ontouchstart="add()"
+				  title="View">
+			    <i class="fa fa-square-o fa-stack-2x"></i>
+			    <i class="fa fa-plus fa-1x"></i>
+			</span>
+
+			<div class="text-center row" id="display">
+			</div>
+		</div>
+	</body>
+</html>
+
+<style>
+	@import "/public/styles/drink.css";
+</style>
+
+<script type="module">
+    'use strict';
+
+    import EasyDom from '/public/services/dom.js';
+    import EasyFetch from '/public/services/fetch.js';
+    import EasyState from '/public/services/state.js';
+    import EasyNotify from '/public/services/notify.js';
+
+    let newNotify = new EasyNotify();
+    let newState = new EasyState();
+    let newFetch = new EasyFetch();
+    let newDom = new EasyDom();
+
+    let display = document.getElementById('display');
+    let socket = io(`${window.location.protocol}//${window.location.hostname}:${window.location.port}`);
+
+    async function displayConfig (elm, config){
+        let container = await newDom.createElm('div', 'drink-container');
+
+        container.innerHTML = `
+                <h2 class="drink-title">${config.displayName}</h2>
+                <img class="drink-image" src="/api/recipe-image/${config.id}"/>
+                <div class="drink-description">${config.description || 'No Description!'}</div>
+                <div class="row">
+                    <span class="fa-stack fa-2x pull-left text-info drink-buttons"  onmousedown="view('${config.id}')" ontouchstart="view('${config.id}')"
+                    	 title="View">
+                      <i class="fa fa-square-o fa-stack-2x"></i>
+                      <i class="fa fa-eye fa-1x"></i>
+                    </span>
+
+                    <span class="fa-stack fa-2x pull-right text-info drink-buttons"  onmousedown="edit('${config.id}')" ontouchstart="edit('${config.id}')"
+                    	 title="Edit">
+                      <i class="fa fa-square-o fa-stack-2x"></i>
+                      <i class="fa fa-cog fa-1x"></i>
+                    </span>
+                </div>
+             `;
+
+        elm.appendChild(container);
+    }
+
+    document.view = (id) => {
+        newState.goToState(`recipes/view`, {
+            id
+		}).catch(err => {
+            newNotify.error(err.message).show();
+        });
+    };
+
+    document.edit = (id) => {
+        newState.goToState(`recipes/edit`, {
+            id
+        }).catch(err => {
+            newNotify.error(err.message).show();
+        });
+    };
+
+    document.add = () => {
+        newState.goToState(`recipes/add`).catch(err => {
+            newNotify.error(err.message).show();
+        });
+    };
+
+    socket.on('init', function (data) {
+        newNotify.info(data).show();
+    },);
+
+    newFetch.getJson('recipes').then(async configs => {
+        configs.forEach(async (config) => await displayConfig(display, config));
+    }).catch(err => {
+        newNotify.error(err.message).show();
+    });
+
+    window.addEventListener('load',function(){
+        let gamepad;
+
+        window.addEventListener('gamepadconnected', function() {
+            gamepad = navigator.getGamepads().pop();
+        });
+
+        window.addEventListener('gamepaddisconnected', function() {
+            gamepad = undefined;
+        });
+    });
+</script>

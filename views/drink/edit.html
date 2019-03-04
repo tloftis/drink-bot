@@ -1,0 +1,162 @@
+<html>
+	<div class="col-xs-12 text-center">
+		<div class="text-center row" id="display">
+		</div>
+	</div>
+</html>
+
+<style>
+	@import "/public/styles/drink.css";
+
+	input[type="file"] {
+		display: none;
+	}
+
+	.custom-file-upload {
+		border: 1px solid #ccc;
+		display: inline-block;
+		padding: 6px 12px;
+		cursor: pointer;
+		margin: 10px 40% 10px 40%;
+		width: 100%;
+		font-size: 20px;
+		font-style: oblique;
+	}
+</style>
+
+<script type="module">
+    'use strict';
+
+    import EasyDom from '/public/services/dom.js';
+    import EasyFetch from '/public/services/fetch.js';
+    import EasyState from '/public/services/state.js';
+    import EasyNotify from '/public/services/notify.js';
+
+    let newNotify = new EasyNotify();
+    let newState = new EasyState();
+    let newFetch = new EasyFetch();
+    let newDom = new EasyDom();
+
+    let display = newDom.querySelector('#display');
+    let configuration = {};
+    let socket = io(`${window.location.protocol}//${window.location.hostname}:${window.location.port}`);
+
+    async function displayConfig (elm, config, replace = false){
+        configuration = config;
+        let container = await newDom.createElm('div', 'drink-container');
+
+        // The date argument is to force the browser to reload the image each time it is requested by treating the
+		// date as a hash
+        container.innerHTML = `
+                <img class="drink-image" src="/api/drink-image/${config.id}?${(new Date()).getTime()}"/>
+
+				<div class="row text-center">
+					<label class="custom-file-upload">
+						<input type="file" accept="image/*" onchange="changeImage('${config.id}')"/>
+						Change Image
+					</label>
+				</div>
+
+                <h2 class="drink-title">
+                	<input type="text" id="drink-title" value="${config.displayName}">
+				</h2>
+                <div class="drink-description">
+                	<textarea type="text" id="drink-description">${config.description}</textarea>
+				</div>
+                <div class="drink-pin">
+                	<label>Pin:</label> <input type="number" class="text-center" value="${config.pin || -1}"></input>
+				</div>
+
+				<div>
+					<button type="button" class="btn btn-outline-primary" onmousedown="save('${config.id}')" ontouchstart="save('${config.id}')">
+						Save
+					</button>
+				</div>
+             `;
+
+        if (replace === true) {
+            elm.innerHTML = '';
+		}
+
+        elm.appendChild(container);
+    }
+
+    function getConfig () {
+        let name = newDom.querySelector('.drink-title input').value;
+        let description = newDom.querySelector('.drink-description textarea').value;
+        let pin = newDom.querySelector('.drink-pin input').value;
+		let conf = {
+            ...configuration,
+            name,
+            description,
+            pin
+        };
+
+		delete conf.image;
+        return conf;
+    }
+
+    document.save = function (id) {
+		let finalConfig = getConfig();
+
+        return newFetch.putJson(`drinks/${id}`, { config: finalConfig }).then(config => {
+            newNotify.success('Successfully updated drink config!').show();
+
+            return displayConfig(display, config, true);
+        }, err => {
+            newNotify.error(err.message).show();
+        });
+	};
+
+    document.changeImage = (id) => {
+        let preview = newDom.querySelector('img'); //selects the query named img
+        let file = newDom.querySelector('input[type=file]').files[0]; //sames as here
+        let reader = new FileReader();
+
+        if (file) {
+            reader.readAsDataURL(file); //reads the data as a URL
+            return newFetch.put(`drink-image/${id}`, file, {
+                'Content-Type': file.type
+			}, true).then(msg => {
+			    let readyFunc =  () => {
+                    preview.src = reader.result;
+                    newNotify.success(msg.message).show();
+                };
+
+			    if (reader.readyState === 2 ) {
+                    readyFunc();
+				} else {
+                    reader.onloadend = readyFunc;
+				}
+			}, err => {
+                newNotify.error(err.message).show();
+			});
+        }
+
+        newNotify.error('No file selected!').show();
+    };
+
+    socket.on('init', function (data) {
+        newNotify.info(data).show();
+    },);
+
+    newState.getParams().then(params => {
+        return newFetch.getJson(`drinks/${params.id}`)
+	}).then(config => {
+        return  displayConfig(display, config);
+    }).catch(err => {
+        newNotify.error(err.message).show();
+    });
+
+    window.addEventListener('load',function(){
+        let gamepad;
+
+        window.addEventListener('gamepadconnected', function() {
+            gamepad = navigator.getGamepads().pop();
+        });
+
+        window.addEventListener('gamepaddisconnected', function() {
+            gamepad = undefined;
+        });
+    });
+</script>

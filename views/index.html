@@ -1,0 +1,53 @@
+<html>
+    <body>
+		<div class="col-xs-12 text-center">
+			<div class="text-center row " style="" id="display">
+				<div class="col-xs-12 text-center drink-container" onmousedown="viewDrinks()" ontouchstart="viewDrinks()" style="cursor: pointer;">
+					<h2 class="drink-title">Drinks</h2>
+					<div>
+						View or edit drink configs
+					</div>
+				</div>
+
+				<div class="col-xs-12 text-center drink-container" onmousedown="viewRecipie()" ontouchstart="viewRecipie()" style="cursor: pointer;">
+					<h2 class="drink-title">Recipes</h2>
+					<div>
+						View or edit recipe configs
+					</div>
+				</div>
+			</div>
+		</div>
+    </body>
+</html>
+
+<style>
+	@import "/public/styles/drink.css";
+</style>
+
+<script type="module">
+    'use strict';
+
+    import EasyState from '/public/services/state.js';
+    import EasyNotify from '/public/services/notify.js';
+
+    let newNotify = new EasyNotify();
+    let newState = new EasyState();
+
+    let socket = io(`${window.location.protocol}//${window.location.hostname}:${window.location.port}`);
+
+    document.viewDrinks = () => {
+        newState.goToState(`drinks`).catch(err => {
+            newNotify.error(err.message).show();
+        });
+	};
+
+    document.viewRecipie = () => {
+        newState.goToState(`recipes`).catch(err => {
+            newNotify.error(err.message).show();
+        });
+    };
+
+    socket.on('init', function (data) {
+        newNotify.info(data).show();
+    });
+</script>

@@ -1,0 +1,222 @@
+<html>
+	<div class="col-xs-12 text-center">
+		<div class="text-center row" id="display">
+		</div>
+	</div>
+</html>
+
+<style>
+	@import "/public/styles/drink.css";
+
+	input[type="file"] {
+		display: none;
+	}
+
+	.custom-file-upload {
+		border: 1px solid #ccc;
+		display: inline-block;
+		padding: 6px 12px;
+		cursor: pointer;
+		margin: 10px 40% 10px 40%;
+		width: 100%;
+		font-size: 20px;
+		font-style: oblique;
+	}
+</style>
+
+<script type="module">
+    'use strict';
+
+    import EasyDom from '/public/services/dom.js';
+    import EasyFetch from '/public/services/fetch.js';
+    import EasyState from '/public/services/state.js';
+    import EasyNotify from '/public/services/notify.js';
+
+    let newNotify = new EasyNotify();
+    let newState = new EasyState();
+    let newFetch = new EasyFetch();
+    let newDom = new EasyDom();
+
+    let display = newDom.querySelector('#display');
+    let configuration = {};
+    let socket = io(`${window.location.protocol}//${window.location.hostname}:${window.location.port}`);
+
+    async function displayConfig (elm, config, replace = false){
+        configuration = config;
+        let container = await newDom.createElm('div', 'drink-container');
+
+        // The date argument is to force the browser to reload the image each time it is requested by treating the
+		// date as a hash
+        container.innerHTML = `
+                <img class="drink-image" src="/api/recipe-image/${config.id}?${(new Date()).getTime()}"/>
+
+				<div class="row text-center">
+					<label class="custom-file-upload">
+						<input type="file" accept="image/*" onchange="changeImage('${config.id}')"/>
+						Change Image
+					</label>
+				</div>
+
+                <h2 class="drink-title">
+                	<input type="text" id="drink-title" value="${config.displayName}">
+				</h2>
+                <div class="drink-description">
+                	<textarea type="text" id="drink-description">${config.description}</textarea>
+				</div>
+
+    			<div class="drink-ingredients">
+            		<table id="drink-table" class="table table-condensed text-center table-bordered drink-table">
+            			<thead>
+            				<tr>
+            					<th class="text-center">
+            						Ingredient
+            					</th>
+
+								<th class="text-center">
+									Parts
+          			  			</th>
+
+								<th class="text-center">
+                      				<i class="fa fa-plus-circle fa-2x text-primary btn" onmousedown="addIngredient()"></i>
+          			  			</th>
+            				</tr>
+            			</thead>
+            			<tbody id="drink-ingredient-body">
+        				${config.ingredients.map(({ ingredient, parts }, index) => {
+        					return `
+							<tr>
+								<td class="drink-ingredient text-center">
+                					<input type="text" value="${ingredient}">
+								</td>
+								<td class="drink-part text-center">
+                					<input type="number" value="${parts}">
+								</td>
+								<td class="drink-part text-center">
+                      				<i class="fa fa-times-circle-o fa-2x text-danger btn" onmousedown="removeIngredient('${index}')"></i>
+								</td>
+							</tr>
+							`;
+    					}).join('\n')}
+    					</tbody>
+    				</table>
+    			</div>
+
+				<div>
+					<button type="button" class="btn btn-outline-primary" onmousedown="save('${config.id}')" ontouchstart="save('${config.id}')">
+						Save
+					</button>
+				</div>
+             `;
+
+        if (replace === true) {
+            elm.innerHTML = '';
+		}
+
+        elm.appendChild(container);
+    }
+
+    function getConfig () {
+        let rows = newDom.querySelectorAll('#drink-table tbody tr'); //selects the query named img
+
+        let ingredients = rows.map(row => {
+            return {
+                ingredient: row.querySelector('.drink-ingredient input').value,
+                parts: row.querySelector('.drink-part input').value,
+            };
+        });
+
+        let name = newDom.querySelector('.drink-title input').value;
+        let description = newDom.querySelector('.drink-description textarea').value;
+		let conf = {
+            ...configuration,
+            name,
+            description,
+            ingredients
+        };
+
+		delete conf.image;
+        return conf;
+    }
+
+    document.save = function (id) {
+		let finalConfig = getConfig();
+
+        return newFetch.putJson(`recipes/${id}`, { config: finalConfig }).then(config => {
+            newNotify.success('Successfully updated recipe config!').show();
+            displayConfig(display, config, true).catch( err => {
+                newNotify.error(err.message).show();
+            });
+        }, err => {
+            newNotify.error(err.message).show();
+        });
+	};
+
+    document.addIngredient = () => {
+        let finalConfig = getConfig();
+
+        finalConfig.ingredients.push({
+			ingredient: '',
+			parts: 0
+		});
+
+        displayConfig(display, finalConfig, true);
+	};
+
+    document.removeIngredient = (index) => {
+        let finalConfig = getConfig();
+        finalConfig.ingredients.splice(index, 1);
+        displayConfig(display, finalConfig, true);
+    };
+
+    document.changeImage = (id) => {
+        let preview = newDom.querySelector('img'); //selects the query named img
+        let file = newDom.querySelector('input[type=file]').files[0]; //sames as here
+        let reader = new FileReader();
+
+        if (file) {
+            reader.readAsDataURL(file); //reads the data as a URL
+            return newFetch.put(`recipe-image/${id}`, file, {
+                'Content-Type': file.type
+			}, true).then(msg => {
+			    let readyFunc =  () => {
+                    preview.src = reader.result;
+                    newNotify.success(msg.message).show();
+                };
+
+			    if (reader.readyState === 2 ) {
+                    readyFunc();
+				} else {
+                    reader.onloadend = readyFunc;
+				}
+			}, err => {
+                newNotify.error(err.message).show();
+			});
+        }
+
+        newNotify.error('No file selected!').show();
+    };
+
+    socket.on('init', function (data) {
+        newNotify.info(data).show();
+    },);
+
+    newState.getParams().then(params => {
+        return newFetch.getJson(`recipes/${params.id}`)
+	}).then(config => {
+        return  displayConfig(display, config);
+    }).catch(err => {
+        newNotify.error(err.message).show();
+    });
+
+    window.addEventListener('load',function(){
+        let gamepad;
+
+        window.addEventListener('gamepadconnected', function() {
+            gamepad = navigator.getGamepads().pop();
+        });
+
+        window.addEventListener('gamepaddisconnected', function() {
+            gamepad = undefined;
+        });
+    });
+</script>
