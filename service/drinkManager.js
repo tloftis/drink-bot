@@ -5,9 +5,17 @@ const defaultImg = path.resolve('public/images/default-bottle.png');
 class DrinkConfigs extends configManager {
     constructor () {
         super();
+        let _this = this;
+        _this.initted = false;
     }
     async init () {
         let _this = this;
+
+        if (_this.initted) {
+            return Promise.resolve();
+        }
+
+        _this.initted = true;
         return _this.initalize('./configs/drinks', defaultImg);
     }
     async checkConfig (config) {

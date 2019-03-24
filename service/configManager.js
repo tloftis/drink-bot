@@ -8,28 +8,23 @@ const fsPromsifiy = {
     writeFile: util.promisify(fs.writeFile),
     lstat: util.promisify(fs.lstat),
     mkdir: util.promisify(fs.mkdir),
-    unlink: util.promisify(fs.unlink),
-    rmdirSync: util.promisify(fs.rmdirSync)
+    rmdir: util.promisify(fs.rmdir),
+    unlink: util.promisify(fs.unlink)
 };
 
-const deleteFolderRecursive = async (path) => {
-    let stat = await fsPromsifiy.lstat(path);
+const deleteFolderRecursive = async (pathLoc) => {
+    let stat = await fsPromsifiy.lstat(pathLoc);
 
-    if (stat) {
-        let files = await fsPromsifiy.readFile(path);
+    if (stat.isDirectory()) {
+        let files = await fsPromsifiy.readdir(pathLoc);
 
         for (let i = 0, file = files[i]; i < files.length; i++, file = files[i]) {
-            let curPath = `${path}/${file}`;
-            let fileStat = fsPromsifiy.lstat(curPath);
-
-            if (fileStat.isDirectory()) { // recurse
-                await deleteFolderRecursive(curPath);
-            } else { // delete file
-                await fsPromsifiy.unlink(curPath);
-            }
+            await deleteFolderRecursive(path.join(pathLoc, file));
         }
 
-        await fsPromsifiy.rmdir(path);
+        await fsPromsifiy.rmdir(pathLoc);
+    } else {
+        await fsPromsifiy.unlink(pathLoc);
     }
 
     return true;

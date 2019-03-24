@@ -88,6 +88,23 @@ export default class EasyFetch {
 
         return resp.json();
     }
+    async deleteJson (url, headers={}) {
+        let _this = this;
+        let finalUrl = `${_this.base}${url}`;
+
+        let resp = await fetch(finalUrl, {
+            method: 'DELETE',
+            headers: new Headers(headers)
+        });
+
+        let resData = await resp.json();
+
+        if (resp.status !== 200) {
+            throw new Error(resData.message || 'Error occurred while requesting data')
+        }
+
+        return resData
+    }
     async get (url, params, headers={}) {
         let _this = this;
     	let query = (new URLSearchParams(params || {})).toString();

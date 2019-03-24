@@ -28,7 +28,7 @@ app.use((req, res, next) => {
     next();
 });
 
-//Inject the header into all views, not sure if this is bad practice yet
+//Inject the header into all views, pretty sure this isn't a great thing to do, but I enjoy the convince
 app.get('*', function(req, res, next) {
     let headerLoc = path.resolve('shared-modules/header.html');
     let headStream = fs.createReadStream(headerLoc);
@@ -77,6 +77,7 @@ app.get('/drinks/add', function(req,res){
 
 require(path.resolve('api/recipe'))(apiRouter, socket);
 require(path.resolve('api/drink'))(apiRouter, socket);
+require(path.resolve('api/machine'))(apiRouter, socket);
 
 server.listen(port, () => {
 	console.log(`Server up on port ${port}`);

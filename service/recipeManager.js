@@ -8,9 +8,17 @@ drinks.init();
 class RecipieConfigs extends configManager {
     constructor () {
         super();
+        let _this = this;
+        _this.initted = false;
     }
     async init () {
         let _this = this;
+
+        if (_this.initted) {
+            return Promise.resolve();
+        }
+
+        _this.initted = true;
         return _this.initalize('./configs/recipies', defaultImg);
     }
     async checkConfig (config) {

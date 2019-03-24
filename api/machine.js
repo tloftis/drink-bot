@@ -1,93 +1,57 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const defaultImg = path.resolve('images/default.png');
-const RecipeMan = require('../service/configManager');
-const recipies = new RecipeMan();
-recipies.initalize('./configs/recipies', defaultImg);
+
+const recipies = require('../service/recipeManager');
+const drinks = require('../service/drinkManager');
+
+recipies.init();
+drinks.init();
 
 module.exports = (app, socket) => {
-    app.route('/recipes')
+    app.route('/machine')
         .get((req, res) => {
-            res.status(200).json(recipies.getConfigs());
-        })
-        .post((req, res) => {
-            let config = req.body.config;
-            delete config.id;
-
-            recipies.addConfig(config).then((config) => {
-                res.status(200).json(config);
-            }, err => {
-                res.status(400).json({
-                    message: err && err.message || 'Unknown Error!'
-                });
-            })
+            res.status(200).json({
+                status: 'Operational'
+            });
         });
 
-    app.route('/recipes/:id')
-        .get((req, res) => {
+    app.route('/machine/make/:id')
+        .put(async (req, res) => {
             let id = req.params.id;
-            res.status(200).json(recipies.getConfig(id));
-        })
-        .put((req, res) => {
-            let id = req.params.id;
-            let config = req.body.config;
-            config.id = id;
+            let request = req.body.config;
+            let config = recipies.getConfig(id);
 
-            recipies.updateConfig(config).then((config) => {
-                res.status(200).json(config);
-            }, err => {
-                res.status(400).json({
-                    message: err && err.message || 'Unknown Error!'
-                });
-            })
-        });
-
-    app.route('/recipe-image/:id')
-        .get((req, res) => {
-            let id = req.params.id;
-
-            recipies.getConfigImageReadStream(id).then((stream) => {
-                stream.pipe(res);
-            }, err => {
-                res.status(400).json({
-                    message: err && err.message || 'Error uploading file!'
-                });
-            })
-        })
-        .put((req, res) => {
-            let id = req.params.id;
-            let stream;
-            let tmpLoc;
-
-            try {
-                let folderLoc = fs.mkdtempSync(path.join(os.tmpdir(), 'img-'));
-                tmpLoc = path.resolve(`${folderLoc}/temp`);
-                let writeStream = fs.createWriteStream(tmpLoc);
-                stream = req.pipe(writeStream);
-            } catch (err) {
+            if (!config) {
                 return res.status(400).json({
-                    message: err && err.message || 'Error uploading file!'
+                    message: `Recipie ${id} was not found!`
                 });
             }
 
-            stream.on('finish', () => {
-                recipies.addImageToConfig(id, tmpLoc).then(() => {
-                    res.status(200).json({
-                        message: 'Image successfully added!'
-                    });
-                }, err => {
-                    res.status(400).json({
-                        message: err && err.message || 'Error uploading file!'
-                    });
-                })
-
-            });
-
-            stream.on('error', err => {
-                res.status(400).json({
-                    message: err && err.message || 'Error uploading file!'
+            if (!request || !request.ounces) {
+                return res.status(400).json({
+                    message: `The amount must be specified!`
                 });
-            });
+            }
+
+            let ounces = request.ounces;
+
+            try {
+                await recipies.checkConfig(config);
+            } catch (err) {
+                return res.status(400).json({
+                    message: err.message
+                });
+            }
+
+            let total = 0;
+            for (let i = 0, recipe = config.ingredients[i]; i < config.ingredients.length; i++, recipe = config.ingredients[i]) {
+                total += +recipe.parts;
+                recipe.pin = drinks.getConfig(recipe.ingredient).pin;
+            }
+
+            let ratio = ounces/total;
+
+            res.status(200).json(config);
         });
 };

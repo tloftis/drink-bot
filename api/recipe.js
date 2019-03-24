@@ -50,6 +50,17 @@ module.exports = (app, socket) => {
                     message: err && err.message || 'Unknown Error!'
                 });
             })
+        })
+        .delete((req, res) => {
+            let id = req.params.id;
+
+            recipies.deleteConfig(id).then((drink) => {
+                res.status(200).json(drink);
+            }, err => {
+                res.status(400).json({
+                    message: err && err.message || 'Unknown Error!'
+                });
+            })
         });
 
     app.route('/recipe-image/:id')

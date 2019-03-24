@@ -88,9 +88,8 @@
     };
 
     document.deleteConf = (id) => {
-        return newFetch.delete(`drinks/${id}`).then(config => {
+        return newFetch.deleteJson(`drinks/${id}`).then(() => {
             newNotify.success('Successfully removed drink config!').show();
-
             return newFetch.getJson('drinks');
         }).then(configs => {
             display.innerHTML = '';
@@ -110,8 +109,15 @@
         newNotify.info(data).show();
     },);
 
-    newFetch.getJson('drinks').then(async configs => {
-        configs.forEach(async (config) => await displayConfig(display, config));
+    newFetch.getJson('drinks').then(configs => {
+        display.innerHTML = '';
+        let displays = [];
+console.log(configs, configs.length);
+        for (let i = 0, config = configs[i]; i < configs.length; i++, config = configs[i]) {
+            displays.push(displayConfig(display, config));
+        }
+
+        return Promise.all(displays);
     }).catch(err => {
         newNotify.error(err.message).show();
     });
