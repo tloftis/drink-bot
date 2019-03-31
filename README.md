@@ -48,3 +48,6 @@ have a fully working device.
 I currently do a hacky method of including Libs and the header. I do have the header injected into all view REST calls
 along side of them a JS file that injects the libs in as well as the libs CSS. I still don't think this is good, but I 
 like if I could only have the libs, and have the header HTML separate, that I wouldn't have issue with it.
+
+
+P.S I don't proof read, but this should still get the general idea out
