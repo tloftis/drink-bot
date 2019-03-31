@@ -1,7 +1,6 @@
 (function () {
     let libs = [
         '/socket.io/socket.io.js',
-//        '/public/libs/bootstrap-3.3.7-dist/js/bootstrap.min.js',
         '/public/libs/noty/noty.min.js',
         '/public/libs/sweetalert2/sweetalert2.all.min.js'
     ];
