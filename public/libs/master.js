@@ -19,8 +19,22 @@ window.addOnLoad = function (load) {
     loaders.push(load);
 };
 
+window.isLoaded = false;
+
 window.onload = function () {
+    window.isLoaded = true;
+
     loaders.forEach(load => {
         load();
     });
+};
+
+window.checkLoaded = function () {
+    return new Promise((resolve) => {
+        if (window.isLoaded) {
+            return resolve();
+        }
+
+        window.addOnLoad(resolve);
+    })
 };

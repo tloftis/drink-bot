@@ -19,6 +19,10 @@
     width: 75%;
 }
 
+#display .drink-pin {
+    width: 100%;
+}
+
 #display .drink-container {
     padding: 10px;
     border-color: #31708f;

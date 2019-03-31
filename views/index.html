@@ -26,28 +26,29 @@
 
 <script type="module">
     'use strict';
-
     import EasyState from '/public/services/state.js';
     import EasyNotify from '/public/services/notify.js';
 
-    let newNotify = new EasyNotify();
-    let newState = new EasyState();
+    window.checkLoaded().then(() => {
+        let newNotify = new EasyNotify();
+        let newState = new EasyState();
 
-    let socket = io(`${window.location.protocol}//${window.location.hostname}:${window.location.port}`);
+        let socket = io(`${window.location.protocol}//${window.location.hostname}:${window.location.port}`);
 
-    document.viewDrinks = () => {
-        newState.goToState(`drinks`).catch(err => {
-            newNotify.error(err.message).show();
+        document.viewDrinks = () => {
+            newState.goToState(`drinks`).catch(err => {
+                newNotify.error(err.message).show();
+            });
+        };
+
+        document.viewRecipie = () => {
+            newState.goToState(`recipes`).catch(err => {
+                newNotify.error(err.message).show();
+            });
+        };
+
+        socket.on('init', function (data) {
+            newNotify.info(data).show();
         });
-	};
-
-    document.viewRecipie = () => {
-        newState.goToState(`recipes`).catch(err => {
-            newNotify.error(err.message).show();
-        });
-    };
-
-    socket.on('init', function (data) {
-        newNotify.info(data).show();
-    });
+	});
 </script>

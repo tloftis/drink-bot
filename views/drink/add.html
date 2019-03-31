@@ -32,6 +32,7 @@
     import EasyState from '/public/services/state.js';
     import EasyNotify from '/public/services/notify.js';
 
+window.checkLoaded().then(() => {
     let newNotify = new EasyNotify();
     let newState = new EasyState();
     let newFetch = new EasyFetch();
@@ -46,13 +47,9 @@
         let container = await newDom.createElm('div', 'drink-container');
 
         // The date argument is to force the browser to reload the image each time it is requested by treating the
-		// date as a hash
+        // date as a hash
         container.innerHTML = `
-			    <p>
-					<object class="drink-image" data="/api/drink-image/${config.id}?${(new Date()).getTime()}" type="image/png">
-					    <img class="drink-image" src="/public/images/default-bottle.png" alt="example">
-					</object>
-				</p>
+                <img class="drink-image" src="/api/drink-image/${config.id}?${(new Date()).getTime()}"/>
 
 				<div class="row text-center">
 					<label class="custom-file-upload">
@@ -67,8 +64,20 @@
                 <div class="drink-description">
                 	<textarea type="text" id="drink-description">${config.description}</textarea>
 				</div>
+
+				<div style="width: 100%;">
+					<i class="fa fa-plus-circle fa-2x text-primary btn" style="margin-bottom: 5px; margin-top: 5px; margin-left: 90%;" onmousedown="addPin()"></i>
+				</div>
+
                 <div class="drink-pin">
-                	<label>Pin:</label> <input type="number" class="text-center" value="${config.pin || -1}"></input>
+				${config.pins.map((pin, index) => {
+           			return `
+						<div style="width: 100%">
+							<label>Pin:</label> <input type="number" class="text-center" value="${pin || -1}"/>
+							<i class="fa fa-times-circle-o fa-2x text-danger btn" onmousedown="removePin('${index}')"></i>
+						</div>
+					`;
+        		}).join('\n')}
 				</div>
 
 				<div>
@@ -80,20 +89,25 @@
 
         if (replace === true) {
             elm.innerHTML = '';
-		}
+        }
 
         elm.appendChild(container);
     }
 
     function getConfig () {
         let name = newDom.querySelector('.drink-title input').value;
-        let description = newDom.querySelector('.drink-description textarea').value;
-        let pin = newDom.querySelector('.drink-pin input').value;
-		let conf = {
+        let description = newDom.querySelector('.drink-description textarea').value
+        let inputs = newDom.querySelectorAll('.drink-pin input'); //selects the query named img
+
+        let pins = inputs.map(input => {
+            return input.value;
+        });
+
+        let conf = {
             ...configuration,
             name,
             description,
-            pin
+            pins
         };
 
 		delete conf.image;
@@ -136,6 +150,18 @@
         }
     };
 
+    document.removePin = index => {
+        let finalConfig = getConfig();
+        finalConfig.pins.splice(index, 1);
+        displayConfig(display, finalConfig, true);
+    };
+
+    document.addPin = () => {
+        let finalConfig = getConfig();
+        finalConfig.pins.push(-1);
+        displayConfig(display, finalConfig, true);
+    };
+
     let changeImage = (id) => {
         let file = newDom.querySelector('input[type=file]').files[0]; //sames as here
 
@@ -153,19 +179,9 @@
     },);
 
     displayConfig(display, {
+        pins: ["-1"]
 	}).catch(err => {
         newNotify.error(err.message).show();
     });
-
-    window.addEventListener('load',function(){
-        let gamepad;
-
-        window.addEventListener('gamepadconnected', function() {
-            gamepad = navigator.getGamepads().pop();
-        });
-
-        window.addEventListener('gamepaddisconnected', function() {
-            gamepad = undefined;
-        });
-    });
+});
 </script>

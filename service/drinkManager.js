@@ -18,32 +18,60 @@ class DrinkConfigs extends configManager {
         _this.initted = true;
         return _this.initalize('./configs/drinks', defaultImg);
     }
-    async checkConfig (config) {
-        if (!config.id) {
-            throw new Error('Missing ID in config!');
-        }
+    async cleanConfig (config) {
+        let uniqueHash = config.pins.reduce((hash, pin) => {
+            hash[pin] = true;
+            return hash;
+        }, {});
 
-        if (!config.pin) {
-            throw new Error('Missing PIN in config!');
-        }
+        config.pins = Object.keys(uniqueHash);
 
         return config;
     }
     async checkAddConfig (config) {
-        if (!config.pin) {
-            throw new Error('Missing PIN in config!');
+        let _this = this;
+
+        if (!config.pins || !(config.pins instanceof Array)) {
+            throw new Error('Missing PINS in config!');
+        }
+
+        let configs = _this.getConfigs();
+
+        let pins = configs.reduce((pins, iConfig) => {
+            if (iConfig.id === config.id) {
+                return pins;
+            }
+
+            return [...iConfig.pins, ...pins];
+        }, []);
+
+        for (let i = 0, cPin = config.pins[i]; i < config.pins.length; i++, cPin = config.pins[i]) {
+            if (pins.indexOf(cPin) !== -1) {
+                throw new Error(`Pin ${cPin} is already in use!`);
+            }
         }
 
         return config;
     }
+    async checkConfig (config) {
+        let _this = this;
+
+        if (!config.id) {
+            throw new Error('Missing ID in config!');
+        }
+
+        return _this.checkAddConfig(config);
+    }
     async updateDrinkConfig(config, createIfNotExist=false) {
         let _this = this;
         await _this.checkConfig(config);
+        await _this.cleanConfig(config);
         return _this.updateConfig(config, createIfNotExist);
     }
     async addDrinkConfig (config, addIfExists=true) {
         let _this = this;
         await _this.checkAddConfig(config);
+        await _this.cleanConfig(config);
         return _this.addConfig(config, addIfExists);
     }
 }

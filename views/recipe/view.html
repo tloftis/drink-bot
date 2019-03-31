@@ -20,6 +20,7 @@
     import EasyState from '/public/services/state.js';
     import EasyNotify from '/public/services/notify.js';
 
+window.checkLoaded().then(() => {
     let newNotify = new EasyNotify();
     let newState = new EasyState();
     let newFetch = new EasyFetch();
@@ -96,16 +97,5 @@
     }).catch(err => {
         newNotify.error(err.message).show();
     });
-
-    window.addEventListener('load',function(){
-        let gamepad;
-
-        window.addEventListener('gamepadconnected', function() {
-            gamepad = navigator.getGamepads().pop();
-        });
-
-        window.addEventListener('gamepaddisconnected', function() {
-            gamepad = undefined;
-        });
-    });
+});
 </script>

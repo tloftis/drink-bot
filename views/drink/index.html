@@ -25,6 +25,7 @@
     import EasyState from '/public/services/state.js';
     import EasyNotify from '/public/services/notify.js';
 
+window.checkLoaded().then(() => {
     let newNotify = new EasyNotify();
     let newState = new EasyState();
     let newFetch = new EasyFetch();
@@ -40,7 +41,13 @@
                 <h2 class="drink-title">${config.displayName}</h2>
                 <img class="drink-image" src="/api/drink-image/${config.id}"/>
                 <div class="drink-description">${config.description || 'No Description!'}</div>
-                <label>Pin:</label> <input type="number" disabled="disabled" class="drink-description" value="${config.pin || -1}"></input>
+				${config.pins.map((pin) => {
+					return `
+						<div class="drink-pin">
+							<label>Pin:</label> <input type="number" disabled="disabled" value="${pin || -1}"/>
+						</div>
+					`;
+				}).join('\n')}
                 <div class="row">
                     <span class="fa-stack fa-2x pull-left text-primary drink-buttons"  onmousedown="view('${config.id}')" ontouchstart="view('${config.id}')"
                     	 title="View">
@@ -112,7 +119,7 @@
     newFetch.getJson('drinks').then(configs => {
         display.innerHTML = '';
         let displays = [];
-console.log(configs, configs.length);
+
         for (let i = 0, config = configs[i]; i < configs.length; i++, config = configs[i]) {
             displays.push(displayConfig(display, config));
         }
@@ -121,16 +128,5 @@ console.log(configs, configs.length);
     }).catch(err => {
         newNotify.error(err.message).show();
     });
-
-    window.addEventListener('load',function(){
-        let gamepad;
-
-        window.addEventListener('gamepadconnected', function() {
-            gamepad = navigator.getGamepads().pop();
-        });
-
-        window.addEventListener('gamepaddisconnected', function() {
-            gamepad = undefined;
-        });
-    });
+});
 </script>
