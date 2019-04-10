@@ -12,20 +12,19 @@
     }
 })();
 
-let loaders = [];
-
-window.addOnLoad = function (load) {
-    loaders.push(load);
-};
-
+window.loaders = [];
 window.isLoaded = false;
 
 window.onload = function () {
     window.isLoaded = true;
 
-    loaders.forEach(load => {
+    window.loaders.forEach(load => {
         load();
     });
+};
+
+window.addOnLoad = function (load) {
+    window.loaders.push(load);
 };
 
 window.checkLoaded = function () {
